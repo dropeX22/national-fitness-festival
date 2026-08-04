@@ -175,6 +175,34 @@ pasa a recibir las inscripciones nuevas.
 > paralelo, es un buen candidato a mejora futura — pero no bloquea el uso
 > normal de un evento a la vez.
 
+## 🐘 Migrar de SQLite a PostgreSQL (recomendado antes de inscripciones reales)
+
+El proyecto usa SQLite por defecto (archivo `evento.db`), ideal para
+desarrollo pero **no persistente en el plan gratuito de Render** (el
+disco se borra en cada reinicio del contenedor). Para pasar a PostgreSQL:
+
+1. En el panel de Render, click **"New +"** → **"PostgreSQL"**.
+2. Dale un nombre (ej. `nff-db`) y elige el plan **Free** para probar
+   (⚠️ se borra automáticamente 30 días después de crearse — sube a un
+   plan pago, desde $6/mes, antes de abrir inscripciones reales).
+3. Una vez creada, copia el valor de **"Internal Database URL"**.
+4. Ve a tu servicio web → pestaña **"Environment"** → agrega:
+   ```
+   DATABASE_URL = <pega aquí la Internal Database URL>
+   ```
+5. Guarda — Render redepliega solo. Al arrancar, `init_db()` crea las
+   tablas automáticamente en PostgreSQL en vez de en el archivo SQLite.
+
+No hace falta cambiar nada más: el código ya detecta automáticamente si
+`DATABASE_URL` es de PostgreSQL o SQLite (ver `app/database.py`), y
+corrige por ti el prefijo `postgres://` → `postgresql://` que a veces
+entregan los proveedores de base de datos.
+
+> Nota: al migrar, empiezas con una base de datos nueva y vacía — los
+> datos que tenías en SQLite no se copian automáticamente. Si ya tienes
+> datos reales que necesitas conservar, avisa antes de migrar para
+> exportarlos primero.
+
 ## 🔒 Autenticación del panel admin y check-in
 
 `/admin` y `/checkin` están protegidos con autenticación HTTP Basic: el

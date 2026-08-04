@@ -17,6 +17,14 @@ load_dotenv()
 # URL de la base de datos. Por defecto usamos un archivo SQLite local.
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./evento.db")
 
+# Algunos proveedores (incluyendo Render en ciertos casos) entregan la URL
+# de PostgreSQL con el prefijo antiguo "postgres://". Ambos prefijos
+# apuntan al mismo protocolo, pero SQLAlchemy 2.x solo acepta el nombre
+# moderno "postgresql://". Sin esta línea, conectar a una base de datos
+# real de Render fallaría con un error de "dialect not found".
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # connect_args es necesario solo para SQLite (permite usarlo desde varios hilos,
 # como hace FastAPI internamente).
 engine = create_engine(
