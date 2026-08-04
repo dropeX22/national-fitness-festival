@@ -60,4 +60,9 @@ def init_db():
     # importación circular entre database.py y models.py
     from app import models  # noqa: F401
     Base.metadata.create_all(bind=engine)
-    print("✅ Base de datos creada/verificada correctamente (evento.db)")
+
+    # Mostramos qué motor de base de datos se está usando realmente (sin
+    # exponer la contraseña en los logs, por seguridad), en vez de un
+    # texto fijo que asumía siempre SQLite.
+    motor = "PostgreSQL" if DATABASE_URL.startswith("postgresql") else "SQLite"
+    print(f"✅ Base de datos creada/verificada correctamente — motor: {motor}")
