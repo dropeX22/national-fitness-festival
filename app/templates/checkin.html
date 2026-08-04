@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block titulo %}Check-in del evento{% endblock %}
+
+{% block contenido %}
+<h2 class="mb-4">📲 Check-in del evento</h2>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <label class="form-label">Buscar por nombre de equipo, código (NF-001) o escanear QR</label>
+    <div class="input-group">
+      <input type="text" id="termino" class="form-control" placeholder="Ej: NF-001 o Los Guerreros">
+      <button class="btn btn-danger" onclick="buscarEquipo()">Buscar</button>
+    </div>
+  </div>
+</div>
+
+<div id="resultado"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function buscarEquipo() {
+    const termino = document.getElementById("termino").value;
+    const contenedor = document.getElementById("resultado");
+    contenedor.innerHTML = "";
+
+    const respuesta = await fetch("/checkin/buscar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ termino }),
+    });
+
+    if (!respuesta.ok) {
+      const error = await respuesta.json();
+      contenedor.innerHTML = `<div class="alert alert-danger">${error.detail}</div>`;
+      return;
+    }
+
+    const equipo = await respuesta.json();
+    const badgeEstado = equipo.estado === "Pagado"
+      ? '<span class="badge bg-success">Pagado</span>'
+      : '<span class="badge bg-warning text-dark">Pendiente</span>';
+
+    contenedor.innerHTML = `
+      <div class="card">
+        <div class="card-body">
+          <h4>${equipo.codigo} - ${equipo.nombre} ${badgeEstado}</h4>
+          <p>Categoría: ${equipo.categoria}</p>
+          <p>Atletas: ${equipo.atletas.join(", ")}</p>
+          <p>Kit entregado: ${equipo.kit_entregado ? "✅ Sí" : "❌ No"}</p>
+          <input type="text" id="responsable" class="form-control mb-2" placeholder="Nombre del responsable del check-in">
+          <button class="btn btn-danger" onclick="registrarCheckin(${equipo.id})" ${equipo.estado !== "Pagado" ? "disabled" : ""}>
+            ✅ Registrar ingreso y entregar kit
+          </button>
+          ${equipo.estado !== "Pagado" ? '<p class="text-danger small mt-2">El equipo debe tener el pago confirmado antes de hacer check-in.</p>' : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  async function registrarCheckin(equipoId) {
+    const responsable = document.getElementById("responsable").value || "Staff";
+    const respuesta = await fetch("/checkin/registrar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ equipo_id: equipoId, responsable, kit_entregado: true }),
+    });
+    if (respuesta.ok) {
+      alert("✅ Check-in registrado correctamente");
+      buscarEquipo();
+    } else {
+      alert("❌ Error al registrar el check-in");
+    }
+  }
+
+  document.getElementById("termino").addEventListener("keypress", function (e) {
+    if (e.key === "Enter") buscarEquipo();
+  });
+</script>
+{% endblock %}

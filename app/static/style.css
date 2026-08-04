@@ -1,0 +1,28 @@
+/* Estilos simples adicionales sobre Bootstrap */
+
+body {
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  letter-spacing: 0.5px;
+}
+
+.card {
+  border-radius: 12px;
+}
+
+.btn-danger {
+  background-color: #e63946;
+  border-color: #e63946;
+}
+
+.btn-danger:hover {
+  background-color: #c92d3b;
+  border-color: #c92d3b;
+}
+
+table th {
+  background-color: #212529;
+  color: white;
+}

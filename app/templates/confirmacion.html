@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block titulo %}Confirmación de inscripción{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h3>✅ Equipo registrado</h3>
+        <p class="text-muted">Código de equipo</p>
+        <h2 class="fw-bold text-danger">{{ equipo.codigo }}</h2>
+
+        <table class="table table-sm mt-3">
+          <tr><th>Nombre</th><td>{{ equipo.nombre }}</td></tr>
+          <tr><th>Categoría</th><td>{{ equipo.categoria.value }}</td></tr>
+          <tr>
+            <th>Estado</th>
+            <td>
+              {% if equipo.estado.value == "Pagado" %}
+                <span class="badge bg-success">Pagado</span>
+              {% elif equipo.estado.value == "Cancelado" %}
+                <span class="badge bg-secondary">Cancelado</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Pendiente de pago</span>
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+
+        <h5 class="mt-3">Integrantes</h5>
+        <ul class="list-group mb-3">
+          {% for atleta in equipo.atletas %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ atleta.nombre }} ({{ atleta.genero.value }})</span>
+            {% if equipo.capitan_id == atleta.id %}<span class="badge bg-dark">Capitán</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+
+        <h5>Tu código QR de acceso</h5>
+        <img src="{{ ruta_qr }}" alt="QR del equipo" style="width:200px;height:200px;" class="mb-3 border p-2">
+        <p class="small text-muted">Preséntalo el día del evento para el check-in y la entrega del kit.</p>
+
+        {% if equipo.estado.value != "Pagado" %}
+        <button class="btn btn-danger btn-lg w-100 mt-2" onclick="iniciarPago({{ equipo.id }})">
+          💳 Pagar ${{ "%.2f"|format(evento.precio_inscripcion) }} con Yappy
+        </button>
+        {% else %}
+        <div class="alert alert-success mt-3">¡Pago confirmado! Revisa tu correo para más detalles.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function iniciarPago(equipoId) {
+    const respuesta = await fetch(`/pago/${equipoId}`, { method: "POST" });
+    const datos = await respuesta.json();
+    if (datos.url_pago) {
+      window.location.href = datos.url_pago;
+    } else {
+      alert("No se pudo generar el pago. Intenta de nuevo.");
+    }
+  }
+</script>
+{% endblock %}

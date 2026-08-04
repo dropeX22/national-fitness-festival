@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+evento.db
+app/static/qrcodes/*.png
+.venv/
+venv/

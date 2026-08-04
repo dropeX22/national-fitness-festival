@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block titulo %}Registro de Equipo{% endblock %}
+
+{% block contenido %}
+<h2 class="mb-4">📋 Inscripción de equipo</h2>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="/registro">
+  <div class="card mb-4">
+    <div class="card-header fw-bold">Datos del equipo</div>
+    <div class="card-body row g-3">
+      <div class="col-md-8">
+        <label class="form-label">Nombre del equipo</label>
+        <input type="text" name="nombre_equipo" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Categoría</label>
+        <select name="categoria" class="form-select" required>
+          <option value="Principiante">Principiante</option>
+          <option value="Avanzado">Avanzado</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  {% for n in [1, 2, 3, 4] %}
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Integrante {{ n }}</div>
+    <div class="card-body row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Nombre completo</label>
+        <input type="text" name="a{{ n }}_nombre" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cédula</label>
+        <input type="text" name="a{{ n }}_cedula" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="a{{ n }}_email" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Género</label>
+        <select name="a{{ n }}_genero" class="form-select" required>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Teléfono (opcional)</label>
+        <input type="text" name="a{{ n }}_telefono" class="form-control">
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="capitan" value="{{ n }}" {% if n == 1 %}checked{% endif %} required>
+          <label class="form-check-label">Es el capitán</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="form-check mb-4">
+    <input class="form-check-input" type="checkbox" name="reglamento_aceptado" value="true" id="reglamento">
+    <label class="form-check-label" for="reglamento">
+      El capitán del equipo ha leído y acepta el reglamento del evento.
+    </label>
+  </div>
+
+  <button type="submit" class="btn btn-danger btn-lg">Confirmar inscripción</button>
+</form>
+{% endblock %}

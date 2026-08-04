@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block titulo %}Inicio - National Fitness Festival{% endblock %}
+
+{% block contenido %}
+<div class="p-5 mb-4 bg-light rounded-3 text-center">
+  <h1 class="display-5 fw-bold">{{ evento.nombre }}</h1>
+  <p class="fs-5 text-muted">{{ evento.descripcion }}</p>
+  <p><b>📅 Fecha:</b> {{ evento.fecha.strftime("%d/%m/%Y") }}</p>
+  <p><b>💰 Inscripción por equipo:</b> ${{ "%.2f"|format(evento.precio_inscripcion) }}</p>
+  <p class="text-muted">Equipos inscritos hasta el momento: <b>{{ total_equipos }}</b></p>
+  <a href="/registro" class="btn btn-danger btn-lg mt-3">🚀 Inscribir mi equipo</a>
+</div>
+
+<div class="row text-center">
+  <div class="col-md-4 mb-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">👥 Equipos de 4</h5>
+        <p class="card-text">2 hombres y 2 mujeres por equipo, con un capitán responsable del reglamento.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">🏆 2 Categorías</h5>
+        <p class="card-text">Principiante y Avanzado. Elige la que se ajuste al nivel de tu equipo.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">📲 Pago con Yappy</h5>
+        <p class="card-text">Inscripción y pago 100% en línea. Recibirás tu QR de acceso por correo.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
