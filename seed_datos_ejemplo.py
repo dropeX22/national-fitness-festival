@@ -20,6 +20,7 @@ equipos_ejemplo = [
         "nombre": "Los Guerreros del Hierro",
         "categoria": "Avanzado",
         "reglamento_aceptado": True,
+        "consentimiento_datos_aceptado": True,
         "atletas": [
             {"nombre": "Carlos Pérez", "cedula": "8-111-1111", "email": "carlos@example.com", "genero": "M", "es_capitan": True},
             {"nombre": "Luis Gómez", "cedula": "8-222-2222", "email": "luis@example.com", "genero": "M", "es_capitan": False},
@@ -31,6 +32,7 @@ equipos_ejemplo = [
         "nombre": "Fuerza Panameña",
         "categoria": "Principiante",
         "reglamento_aceptado": True,
+        "consentimiento_datos_aceptado": True,
         "atletas": [
             {"nombre": "José Ramírez", "cedula": "8-555-5555", "email": "jose@example.com", "genero": "M", "es_capitan": True},
             {"nombre": "Pedro Sánchez", "cedula": "8-666-6666", "email": "pedro@example.com", "genero": "M", "es_capitan": False},

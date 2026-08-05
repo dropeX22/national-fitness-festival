@@ -96,6 +96,7 @@ async def procesar_registro(
             nombre=nombre_equipo,
             categoria=categoria,
             reglamento_aceptado=reglamento_aceptado,
+            consentimiento_datos_aceptado=consentimiento_datos_aceptado,  # nueva línea
             atletas=atletas_schema,
         )
     except ValidationError as error:
@@ -144,3 +145,7 @@ def pagina_confirmacion(equipo_id: int, request: Request, db: Session = Depends(
             "evento": evento,
         },
     )
+@router.get("/privacidad", response_class=HTMLResponse)
+def pagina_privacidad(request: Request):
+    """Aviso de privacidad — Ley 81 de 2019, Panamá."""
+    return templates.TemplateResponse("privacidad.html", {"request": request})

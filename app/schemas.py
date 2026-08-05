@@ -45,6 +45,7 @@ class EquipoCreate(BaseModel):
     nombre: str
     categoria: CategoriaEnum
     reglamento_aceptado: bool
+    consentimiento_datos_aceptado: bool
     atletas: List[AtletaCreate]
 
     @field_validator("atletas")
@@ -74,6 +75,12 @@ class EquipoCreate(BaseModel):
     def validar_reglamento(cls, valor: bool):
         if not valor:
             raise ValueError("El capitán debe aceptar el reglamento para inscribir al equipo")
+        return valor
+    @field_validator("consentimiento_datos_aceptado")
+    @classmethod
+    def validar_consentimiento_datos(cls, valor: bool):
+        if not valor:
+            raise ValueError("Debes aceptar el tratamiento de tus datos personales para inscribirte")
         return valor
 
 

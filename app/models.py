@@ -78,6 +78,9 @@ class Equipo(Base):
     capitan_id = Column(Integer, ForeignKey("atletas.id"), nullable=True)
 
     reglamento_aceptado = Column(Boolean, nullable=False, default=False)
+    # Consentimiento para el TRATAMIENTO DE DATOS PERSONALES (Ley 81 de 2019,
+    # Panamá) — es distinto de aceptar el reglamento deportivo del evento.
+    consentimiento_datos_aceptado = Column(Boolean, nullable=False, default=False)
     estado = Column(Enum(EstadoEquipoEnum), nullable=False, default=EstadoEquipoEnum.pendiente, index=True)
 
     evento_id = Column(Integer, ForeignKey("eventos.id"), nullable=False)

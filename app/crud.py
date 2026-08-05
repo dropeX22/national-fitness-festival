@@ -115,6 +115,7 @@ def crear_equipo(db: Session, datos: schemas.EquipoCreate) -> models.Equipo:
         nombre=datos.nombre.strip(),
         categoria=datos.categoria,
         reglamento_aceptado=datos.reglamento_aceptado,
+        consentimiento_datos_aceptado=datos.consentimiento_datos_aceptado,  # nueva línea
         estado=models.EstadoEquipoEnum.pendiente,
         evento_id=evento.id,
     )
