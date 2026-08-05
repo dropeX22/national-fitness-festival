@@ -45,6 +45,7 @@ async def procesar_registro(
     nombre_equipo: str = Form(...),
     categoria: str = Form(...),
     reglamento_aceptado: bool = Form(False),
+    consentimiento_datos_aceptado: bool = Form(False),
     # Atleta 1 (capitán por defecto en el form, pero se puede marcar otro)
     a1_nombre: str = Form(...),
     a1_cedula: str = Form(...),
