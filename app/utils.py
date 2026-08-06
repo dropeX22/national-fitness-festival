@@ -6,7 +6,9 @@ Estas funciones NO dependen de FastAPI, así se pueden probar por separado.
 """
 
 import os
+import base64
 import qrcode
+import requests
 
 # Carpeta donde se guardan las imágenes QR generadas
 CARPETA_QR = os.path.join(os.path.dirname(__file__), "static", "qrcodes")
@@ -32,50 +34,59 @@ def generar_qr_equipo(equipo_id: int, codigo_equipo: str) -> str:
 
 def enviar_correo_confirmacion(destinatario: str, nombre_equipo: str, codigo_equipo: str, ruta_qr_local: str):
     """
-    Envía un correo al capitán con los detalles de la inscripción y el QR
-    adjunto. Usa yagmail, que requiere las variables de entorno:
-      EMAIL_REMITENTE y EMAIL_CLAVE_APP (contraseña de aplicación de Gmail).
-
-    Si esas variables no están configuradas (por ejemplo en desarrollo),
-    la función simplemente imprime un mensaje en consola en vez de fallar,
-    para que el resto del sistema siga funcionando sin correo real.
+    Envía el correo de confirmación usando la API HTTP de Brevo (antes
+    Sendinblue), en vez de SMTP tradicional. Esto es necesario porque
+    Render bloquea los puertos SMTP (25, 465, 587) en su plan gratuito,
+    pero SÍ permite tráfico HTTPS normal (puerto 443), que es lo que usa
+    esta API.
     """
+    api_key = os.getenv("BREVO_API_KEY")
     remitente = os.getenv("EMAIL_REMITENTE")
-    clave = os.getenv("EMAIL_CLAVE_APP")
 
     asunto = f"Inscripción confirmada - National Fitness Festival ({codigo_equipo})"
-    cuerpo = (
-        f"Hola,\n\n"
-        f"El equipo '{nombre_equipo}' (código {codigo_equipo}) ha sido registrado "
-        f"para el National Fitness Festival.\n\n"
-        f"Adjuntamos el código QR que deberán presentar el día del evento "
-        f"para hacer el check-in y recibir su kit.\n\n"
-        f"Instrucciones para el día del evento:\n"
-        f"1. Llegar con al menos 30 minutos de anticipación.\n"
-        f"2. Presentar el QR (impreso o en el celular).\n"
-        f"3. Todos los integrantes del equipo deben estar presentes.\n\n"
-        f"¡Nos vemos en la competencia!\n"
-        f"Equipo organizador - National Fitness Festival"
-    )
+    cuerpo_html = f"""
+        <p>Hola,</p>
+        <p>El equipo <b>{nombre_equipo}</b> (código {codigo_equipo}) ha sido registrado
+        para el National Fitness Festival.</p>
+        <p>Adjuntamos el código QR que deberán presentar el día del evento
+        para hacer el check-in y recibir su kit.</p>
+        <p><b>Instrucciones para el día del evento:</b></p>
+        <ol>
+          <li>Llegar con al menos 30 minutos de anticipación.</li>
+          <li>Presentar el QR (impreso o en el celular).</li>
+          <li>Todos los integrantes del equipo deben estar presentes.</li>
+        </ol>
+        <p>¡Nos vemos en la competencia!<br>Equipo organizador - National Fitness Festival</p>
+    """
 
-    if not remitente or not clave:
-        # Modo simulado: no hay credenciales configuradas
-        print("⚠️  Envío de correo SIMULADO (configura EMAIL_REMITENTE y EMAIL_CLAVE_APP en .env)")
+    if not api_key or not remitente:
+        print("⚠️  Envío de correo SIMULADO (configura BREVO_API_KEY y EMAIL_REMITENTE en .env)")
         print(f"    Para: {destinatario}")
         print(f"    Asunto: {asunto}")
         return False
 
+    payload = {
+        "sender": {"email": remitente, "name": "National Fitness Festival"},
+        "to": [{"email": destinatario}],
+        "subject": asunto,
+        "htmlContent": cuerpo_html,
+    }
+
+    # Adjuntamos el QR si existe, codificado en base64 (así lo pide la API)
+    if ruta_qr_local and os.path.exists(ruta_qr_local):
+        with open(ruta_qr_local, "rb") as archivo:
+            contenido_base64 = base64.b64encode(archivo.read()).decode("utf-8")
+        payload["attachment"] = [{"content": contenido_base64, "name": f"{codigo_equipo}.png"}]
+
     try:
-        import yagmail
-        yag = yagmail.SMTP(remitente, clave)
-        yag.send(
-            to=destinatario,
-            subject=asunto,
-            contents=cuerpo,
-            attachments=[ruta_qr_local] if ruta_qr_local and os.path.exists(ruta_qr_local) else None,
+        respuesta = requests.post(
+            "https://api.brevo.com/v3/smtp/email",
+            json=payload,
+            headers={"api-key": api_key, "Content-Type": "application/json"},
+            timeout=10,
         )
+        respuesta.raise_for_status()
         return True
     except Exception as error:
-        # No queremos que un error de correo tumbe la inscripción del equipo
         print(f"❌ Error enviando correo: {error}")
         return False
