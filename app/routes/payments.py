@@ -19,14 +19,14 @@ este archivo incluye:
 
 import os
 import requests
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import crud, schemas, models
+from app import crud, schemas, models, utils
 
-router = APIRouter(tags=["Pagos / Yappy"])
+router = APIRouter(tags=["Pagos"])
 
 YAPPY_MERCHANT_ID = os.getenv("YAPPY_MERCHANT_ID")
 YAPPY_SECRET_KEY = os.getenv("YAPPY_SECRET_KEY")
@@ -34,16 +34,32 @@ YAPPY_API_URL = os.getenv("YAPPY_API_URL", "https://apipagosbg.bgeneral.com")  #
 MODO_SIMULADO = not (YAPPY_MERCHANT_ID and YAPPY_SECRET_KEY)
 
 
-@router.post("/pago/{equipo_id}")
-def generar_pago(equipo_id: int, db: Session = Depends(get_db)):
+def _avisar_organizacion(equipo: models.Equipo, metodo_pago: str):
+    """Dispara el correo interno de aviso, tal como se definió: al momento de elegir método de pago."""
+    capitan = equipo.capitan
+    utils.enviar_correo_aviso_organizacion(
+        nombre_equipo=equipo.nombre,
+        codigo_equipo=equipo.codigo,
+        metodo_pago=metodo_pago,
+        capitan_nombre=f"{capitan.nombre} {capitan.apellido}" if capitan else "N/D",
+        capitan_email=capitan.email if capitan else "N/D",
+        capitan_telefono=capitan.telefono if capitan else "N/D",
+    )
+
+
+@router.post("/pago/{equipo_id}/yappy")
+def generar_pago_yappy(equipo_id: int, db: Session = Depends(get_db), telefono_yappy: str = Form(...)):
     """
-    Crea un registro de pago 'pendiente' y devuelve la URL a la que el
-    capitán debe ir para pagar (botón de Yappy real o simulado).
+    Crea el pago con método Yappy y devuelve la URL a la que el capitán
+    debe ir para pagar (botón de Yappy real o simulado). El teléfono de
+    Yappy es aparte del teléfono del capitán, porque a veces usan el
+    Yappy de alguien externo al equipo.
     """
     equipo = crud.obtener_equipo(db, equipo_id)
     evento = crud.obtener_o_crear_evento(db)
 
-    pago = crud.crear_pago_pendiente(db, equipo_id, evento.precio_inscripcion)
+    pago = crud.crear_pago(db, equipo_id, evento.precio_inscripcion, models.MetodoPagoEnum.yappy, telefono_yappy)
+    _avisar_organizacion(equipo, "Yappy")
 
     if MODO_SIMULADO:
         # En modo simulado, en vez de ir a Yappy real, mandamos al usuario
@@ -58,6 +74,32 @@ def generar_pago(equipo_id: int, db: Session = Depends(get_db)):
         "url_pago": url_pago,
         "modo_simulado": MODO_SIMULADO,
     }
+
+
+@router.post("/pago/{equipo_id}/transferencia")
+def generar_pago_transferencia(equipo_id: int, db: Session = Depends(get_db)):
+    """
+    Crea el pago con método Transferencia: queda "Pendiente de
+    verificación" con un plazo, manda el correo 1 al capitán (avisando
+    del plazo) y el correo interno a la organización para que revisen
+    el estado de cuenta del banco.
+    """
+    equipo = crud.obtener_equipo(db, equipo_id)
+    evento = crud.obtener_o_crear_evento(db)
+
+    pago = crud.crear_pago(db, equipo_id, evento.precio_inscripcion, models.MetodoPagoEnum.transferencia)
+
+    capitan = equipo.capitan
+    if capitan and capitan.email:
+        utils.enviar_correo_transferencia_pendiente(
+            destinatario=capitan.email,
+            nombre_equipo=equipo.nombre,
+            codigo_equipo=equipo.codigo,
+            horas_plazo=crud.HORAS_PLAZO_VERIFICACION_TRANSFERENCIA,
+        )
+    _avisar_organizacion(equipo, "Transferencia")
+
+    return RedirectResponse(url=f"/confirmacion/{equipo_id}", status_code=303)
 
 
 def _crear_orden_yappy_real(pago: models.Pago, equipo: models.Equipo) -> str:

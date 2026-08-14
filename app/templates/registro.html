@@ -2,7 +2,7 @@
 {% block titulo %}Registro de Equipo{% endblock %}
 
 {% block contenido %}
-<h2 class="mb-4">📋 Inscripción de equipo</h2>
+<h2 class="mb-4">📋 Inscripción de equipo (4 atletas)</h2>
 
 {% if error %}
 <div class="alert alert-danger">{{ error }}</div>
@@ -26,22 +26,105 @@
     </div>
   </div>
 
-  {% for n in [1, 2, 3, 4] %}
-  <div class="card mb-3">
-    <div class="card-header fw-bold">Integrante {{ n }}</div>
+  <!-- ATLETA 1 = CAPITÁN. Es fijo, no se elige: siempre es quien llena
+       este formulario, por eso es el único con email/teléfono. -->
+  <div class="card mb-3 border-danger">
+    <div class="card-header fw-bold bg-danger text-white">👤 Capitán (Atleta 1)</div>
     <div class="card-body row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="a1_nombre" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Apellido</label>
+        <input type="text" name="a1_apellido" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cédula o Pasaporte</label>
+        <input type="text" name="a1_cedula" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Fecha de nacimiento</label>
+        <input type="date" name="a1_fecha_nacimiento" class="form-control" required>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label">Género</label>
+        <select name="a1_genero" class="form-select" required>
+          <option value="M">Masculino</option>
+          <option value="F">Femenino</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Nacionalidad</label>
+        <input type="text" name="a1_nacionalidad" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Talla <span class="text-muted small">(sujeto a disp.)</span></label>
+        <select name="a1_talla" class="form-select" required>
+          <option value="S">Small</option>
+          <option value="M">Medium</option>
+          <option value="L">Large</option>
+          <option value="XL">X Large</option>
+          <option value="XXL">XX Large</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Box</label>
+        <input type="text" name="a1_box" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Tipo de sangre</label>
+        <select name="a1_tipo_sangre" class="form-select" required>
+          <option value="A+">A+</option>
+          <option value="A-">A-</option>
+          <option value="B+">B+</option>
+          <option value="B-">B-</option>
+          <option value="AB+">AB+</option>
+          <option value="AB-">AB-</option>
+          <option value="O+">O+</option>
+          <option value="O-">O-</option>
+        </select>
+      </div>
+
       <div class="col-md-4">
-        <label class="form-label">Nombre completo</label>
+        <label class="form-label">Email</label>
+        <input type="email" name="a1_email" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Confirmación de Email</label>
+        <input type="email" name="a1_email_confirmacion" class="form-control" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Teléfono</label>
+        <input type="text" name="a1_telefono" class="form-control" required>
+      </div>
+    </div>
+  </div>
+
+  <h4 class="mt-4 mb-3">👥 Equipo</h4>
+
+  {% for n in [2, 3, 4] %}
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Atleta {{ n }}</div>
+    <div class="card-body row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Nombre</label>
         <input type="text" name="a{{ n }}_nombre" class="form-control" required>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Cédula</label>
+        <label class="form-label">Apellido</label>
+        <input type="text" name="a{{ n }}_apellido" class="form-control" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cédula o Pasaporte</label>
         <input type="text" name="a{{ n }}_cedula" class="form-control" required>
       </div>
       <div class="col-md-3">
-        <label class="form-label">Email</label>
-        <input type="email" name="a{{ n }}_email" class="form-control" required>
+        <label class="form-label">Fecha de nacimiento</label>
+        <input type="date" name="a{{ n }}_fecha_nacimiento" class="form-control" required>
       </div>
+
       <div class="col-md-2">
         <label class="form-label">Género</label>
         <select name="a{{ n }}_genero" class="form-select" required>
@@ -49,33 +132,55 @@
           <option value="F">Femenino</option>
         </select>
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Teléfono (opcional)</label>
-        <input type="text" name="a{{ n }}_telefono" class="form-control">
+      <div class="col-md-3">
+        <label class="form-label">Nacionalidad</label>
+        <input type="text" name="a{{ n }}_nacionalidad" class="form-control" required>
       </div>
-      <div class="col-md-3 d-flex align-items-end">
-        <div class="form-check">
-          <input class="form-check-input" type="radio" name="capitan" value="{{ n }}" {% if n == 1 %}checked{% endif %} required>
-          <label class="form-check-label">Es el capitán</label>
-        </div>
+      <div class="col-md-2">
+        <label class="form-label">Talla <span class="text-muted small">(sujeto a disp.)</span></label>
+        <select name="a{{ n }}_talla" class="form-select" required>
+          <option value="S">Small</option>
+          <option value="M">Medium</option>
+          <option value="L">Large</option>
+          <option value="XL">X Large</option>
+          <option value="XXL">XX Large</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Box</label>
+        <input type="text" name="a{{ n }}_box" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Tipo de sangre</label>
+        <select name="a{{ n }}_tipo_sangre" class="form-select" required>
+          <option value="A+">A+</option>
+          <option value="A-">A-</option>
+          <option value="B+">B+</option>
+          <option value="B-">B-</option>
+          <option value="AB+">AB+</option>
+          <option value="AB-">AB-</option>
+          <option value="O+">O+</option>
+          <option value="O-">O-</option>
+        </select>
       </div>
     </div>
   </div>
   {% endfor %}
 
-  <div class="form-check mb-4">
+  <div class="form-check mb-3">
     <input class="form-check-input" type="checkbox" name="reglamento_aceptado" value="true" id="reglamento">
     <label class="form-check-label" for="reglamento">
       El capitán del equipo ha leído y acepta el reglamento del evento.
     </label>
   </div>
+
   <div class="form-check mb-4">
     <input class="form-check-input" type="checkbox" name="consentimiento_datos_aceptado" value="true" id="consentimiento">
     <label class="form-check-label" for="consentimiento">
       Autorizo el tratamiento de mis datos personales y los de mi equipo conforme a la
       <a href="/privacidad" target="_blank">Política de Privacidad</a> (Ley 81 de 2019, Panamá).
     </label>
-   </div>
+  </div>
 
   <button type="submit" class="btn btn-danger btn-lg">Confirmar inscripción</button>
 </form>

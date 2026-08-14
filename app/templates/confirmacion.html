@@ -31,7 +31,7 @@
         <ul class="list-group mb-3">
           {% for atleta in equipo.atletas %}
           <li class="list-group-item d-flex justify-content-between">
-            <span>{{ atleta.nombre }} ({{ atleta.genero.value }})</span>
+            <span>{{ atleta.nombre }} {{ atleta.apellido }} ({{ atleta.genero.value }})</span>
             {% if equipo.capitan_id == atleta.id %}<span class="badge bg-dark">Capitán</span>{% endif %}
           </li>
           {% endfor %}
@@ -41,12 +41,55 @@
         <img src="{{ ruta_qr }}" alt="QR del equipo" style="width:200px;height:200px;" class="mb-3 border p-2">
         <p class="small text-muted">Preséntalo el día del evento para el check-in y la entrega del kit.</p>
 
-        {% if equipo.estado.value != "Pagado" %}
-        <button class="btn btn-danger btn-lg w-100 mt-2" onclick="iniciarPago({{ equipo.id }})">
-          💳 Pagar ${{ "%.2f"|format(evento.precio_inscripcion) }} con Yappy
-        </button>
+        {% if equipo.estado.value == "Pagado" %}
+          <div class="alert alert-success mt-3">¡Pago confirmado! Revisa tu correo para más detalles.</div>
+
+        {% elif pago and pago.metodo_pago.value == "Transferencia" and pago.estado.value == "Pendiente de verificación" %}
+          <div class="alert alert-warning mt-3 text-start">
+            <b>⏳ Estamos verificando tu transferencia.</b><br>
+            Nuestro equipo confirmará el pago manualmente. Tienes hasta
+            <b>{{ pago.fecha_limite_verificacion.strftime("%d/%m/%Y %H:%M") }}</b> para que se procese.
+            Recibirás un correo de confirmación en cuanto se verifique.
+          </div>
+
+        {% elif pago and pago.metodo_pago.value == "Yappy" and pago.estado.value == "Pendiente" %}
+          <div class="alert alert-warning mt-3 text-start">
+            <b>⏳ Solicitud de Yappy generada.</b><br>
+            Completa el pago desde tu app de Yappy en el número {{ pago.telefono_yappy }}.
+          </div>
+          <a href="/pago/simular/{{ pago.referencia_yappy }}" class="btn btn-outline-danger w-100 mt-2">
+            (Modo de pruebas) Ir a completar el pago simulado
+          </a>
+
         {% else %}
-        <div class="alert alert-success mt-3">¡Pago confirmado! Revisa tu correo para más detalles.</div>
+          <div class="mt-4 text-start">
+            <h5 class="text-center mb-3">Elige tu método de pago (${{ "%.2f"|format(evento.precio_inscripcion) }})</h5>
+
+            <div class="card mb-3">
+              <div class="card-body">
+                <h6>📲 Pagar con Yappy</h6>
+                <label class="form-label small">Número de teléfono para la solicitud de Yappy</label>
+                <input type="text" id="telefono_yappy" class="form-control mb-2" placeholder="6000-0000">
+                <button class="btn btn-danger w-100" onclick="pagarConYappy({{ equipo.id }})">Generar solicitud de Yappy</button>
+                <p class="small text-muted mt-2 mb-0">Puede ser el teléfono del capitán o el de otra persona que tenga Yappy.</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <h6>🏦 Pagar por Transferencia</h6>
+                <p class="small mb-2">Realiza la transferencia a la cuenta del evento y luego confirma abajo. Nuestro equipo verificará el pago manualmente.</p>
+                <ul class="small text-muted">
+                  <li>Banco: (configurar con los datos reales del evento)</li>
+                  <li>Cuenta: (configurar con los datos reales del evento)</li>
+                  <li>Titular: National Fitness Festival</li>
+                </ul>
+                <form method="post" action="/pago/{{ equipo.id }}/transferencia">
+                  <button type="submit" class="btn btn-outline-danger w-100">Ya realicé la transferencia</button>
+                </form>
+              </div>
+            </div>
+          </div>
         {% endif %}
       </div>
     </div>
@@ -56,13 +99,23 @@
 
 {% block scripts %}
 <script>
-  async function iniciarPago(equipoId) {
-    const respuesta = await fetch(`/pago/${equipoId}`, { method: "POST" });
+  async function pagarConYappy(equipoId) {
+    const telefono = document.getElementById("telefono_yappy").value.trim();
+    if (!telefono) {
+      alert("Por favor indica el número de teléfono para la solicitud de Yappy.");
+      return;
+    }
+    const formulario = new FormData();
+    formulario.append("telefono_yappy", telefono);
+
+    const respuesta = await fetch(`/pago/${equipoId}/yappy`, { method: "POST", body: formulario });
+    if (!respuesta.ok) {
+      alert("No se pudo generar la solicitud de Yappy. Intenta de nuevo.");
+      return;
+    }
     const datos = await respuesta.json();
     if (datos.url_pago) {
       window.location.href = datos.url_pago;
-    } else {
-      alert("No se pudo generar el pago. Intenta de nuevo.");
     }
   }
 </script>

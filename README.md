@@ -33,6 +33,11 @@ python -c "from app.database import init_db; init_db()"
 ```bash
 python seed_datos_ejemplo.py
 ```
+> ⚠️ Corre este comando con el servidor **apagado** (o antes de arrancarlo).
+> Si lo corres mientras `python run.py` está activo con auto-reload, puede
+> haber una condición de carrera por el archivo SQLite y los datos no
+> quedar guardados correctamente. En PostgreSQL (producción) esto no pasa,
+> es una particularidad de SQLite con múltiples procesos escribiendo a la vez.
 
 ### 6. Ejecutar el servidor
 ```bash
@@ -78,40 +83,91 @@ mi_evento/
 ## ✅ Reglas de negocio implementadas
 
 - Equipos de exactamente 4 personas: 2 hombres y 2 mujeres.
-- Un atleta (por cédula) no puede estar en más de un equipo ni repetirse
-  en otra categoría (se valida contra TODOS los equipos del evento).
-- El capitán debe aceptar el reglamento para poder inscribir al equipo.
-- El pago se hace por equipo completo; si el pago no está confirmado,
-  el equipo queda en estado **Pendiente** y no puede hacer check-in.
+- Cada atleta tiene: nombre, apellido, cédula o pasaporte, fecha de
+  nacimiento, género, nacionalidad, talla, box de origen y tipo de
+  sangre. Solo el **capitán** llena además email (con confirmación) y
+  teléfono — es el contacto principal del equipo.
+- Un atleta (por cédula/pasaporte) no puede estar en más de un equipo
+  dentro del mismo evento (sí puede repetirse entre ediciones de años
+  distintos — ver sección "Eventos anuales").
+- El **Atleta 1 siempre es el capitán** (no se elige, es quien llena el
+  formulario) — es el único con email (con confirmación) y teléfono.
+- El capitán debe aceptar el reglamento y el tratamiento de datos
+  personales para poder inscribir al equipo.
+- El pago se hace por equipo completo, con dos métodos disponibles:
+  **Yappy** o **transferencia bancaria** (ver sección de pagos abajo).
 - No hay límite de equipos ni lista de espera.
-- Los integrantes no se pueden editar después de inscribirse (no existe
-  ruta de edición a propósito).
+- Los **participantes** no pueden editar su equipo después de
+  inscribirse. El **staff sí puede**, desde `/admin`, corregir
+  integrantes o crear equipos manualmente (inscripciones extraordinarias).
 - Código único por equipo (`NF-001`, `NF-002`, ...).
 
-## 💳 Integración con Yappy
+## 💳 Métodos de pago: Yappy y Transferencia
 
-Como es normal que todavía no tengas una cuenta comercial de Yappy, el
-sistema detecta automáticamente si hay credenciales en `.env`:
+El capitán elige, desde la página de confirmación, cómo pagar:
 
-- **Sin credenciales (por defecto):** modo simulado. Al hacer clic en
-  "Pagar", se abre una pantalla de prueba con botones "Confirmar pago" /
-  "Rechazar pago" que dispara la misma lógica que usaría el webhook real.
-- **Con credenciales (`YAPPY_MERCHANT_ID` y `YAPPY_SECRET_KEY`):** el
-  sistema intenta llamar a la API real de Yappy Comercial. Los nombres de
-  endpoint/campos en `app/routes/payments.py` (función
-  `_crear_orden_yappy_real`) son ilustrativos — debes ajustarlos con la
-  documentación oficial que Yappy entrega al afiliarte como comercio.
-- El endpoint `/webhook/yappy` recibe las notificaciones reales de pago y
-  maneja pagos duplicados (si Yappy reenvía la misma notificación, no se
-  duplica nada).
+**Yappy:**
+- Se pide un **número de teléfono aparte** del teléfono del capitán —
+  porque a veces usan el Yappy de otra persona ajena al equipo.
+- Como es normal que todavía no tengas cuenta comercial de Yappy, el
+  sistema detecta automáticamente si hay credenciales en `.env`:
+  - **Sin credenciales (por defecto):** modo simulado, con una pantalla
+    de prueba con botones "Confirmar pago" / "Rechazar pago".
+  - **Con credenciales (`YAPPY_MERCHANT_ID` y `YAPPY_SECRET_KEY`):** el
+    sistema intenta llamar a la API real de Yappy Comercial. Los nombres
+    de endpoint/campos en `app/routes/payments.py` (función
+    `_crear_orden_yappy_real`) son ilustrativos — ajústalos con la
+    documentación oficial que Yappy entrega al afiliarte como comercio.
+- El endpoint `/webhook/yappy` recibe notificaciones reales y maneja
+  pagos duplicados.
 
-## 📧 Correos
+**Transferencia bancaria:**
+- Al elegir esta opción, el equipo queda en estado "Pendiente de
+  verificación" con un plazo de **72 horas** (configurable en
+  `crud.HORAS_PLAZO_VERIFICACION_TRANSFERENCIA`).
+- Se envía un **correo 1** al capitán avisando del plazo.
+- El staff revisa manualmente el estado de cuenta del banco y, desde
+  `/admin`, hace clic en "Verificar transferencia" (escribiendo su
+  nombre como responsable).
+- Esto marca el pago como confirmado, el equipo pasa a "Pagado", y se
+  envía un **correo 2** de confirmación al capitán.
+- ⚠️ Los datos bancarios que se muestran en la página de confirmación
+  (`app/templates/confirmacion.html`) son un placeholder — reemplázalos
+  por los datos reales de la cuenta del evento antes de usarlo en producción.
 
-Usa `yagmail` con una **contraseña de aplicación de Gmail** (no tu
-contraseña normal; se genera en la configuración de seguridad de tu
-cuenta de Google). Si no configuras `EMAIL_REMITENTE` y `EMAIL_CLAVE_APP`
-en `.env`, el sistema simplemente imprime en consola lo que habría
-enviado, sin bloquear la inscripción.
+**Correo interno a la organización:** cada vez que un equipo elige
+método de pago (Yappy o transferencia), se manda un correo a
+`ADMIN_NOTIFICACION_EMAIL` (.env) avisando qué deben verificar.
+
+## 🛠️ Editar o crear equipos desde el admin
+
+- **Editar** (`/admin/equipo/{id}/editar`): reemplaza los 4 integrantes
+  de un equipo ya inscrito. Útil si cambia una persona después de
+  inscribirse. Solo el staff tiene acceso (protegido con login).
+- **Crear manual** (`/admin/equipo/nuevo`): inscribe un equipo
+  directamente desde el panel, sin pasar por el formulario público —
+  para inscripciones extraordinarias (ej. alguien que se inscribió por
+  WhatsApp). No exige confirmación de email del capitán con el mismo
+  rigor que el formulario público, ya que aquí es el staff quien
+  transcribe los datos.
+
+## 📧 Correos (vía Brevo)
+
+Usa la **API HTTP de Brevo** (antes Sendinblue) en vez de SMTP
+tradicional, porque Render bloquea los puertos SMTP en su plan gratuito.
+Configura en `.env`:
+```
+BREVO_API_KEY=tu-api-key-de-brevo
+EMAIL_REMITENTE=correo-verificado-en-brevo@ejemplo.com
+ADMIN_NOTIFICACION_EMAIL=correo-del-staff@ejemplo.com
+```
+Si no configuras `BREVO_API_KEY`/`EMAIL_REMITENTE`, el sistema simula el
+envío imprimiendo en consola, sin bloquear la inscripción. Hay 4 correos
+distintos en el sistema (`app/utils.py`):
+1. Confirmación de inscripción (con QR adjunto)
+2. Aviso interno a la organización (al elegir método de pago)
+3. Transferencia pendiente (correo 1 del flujo de transferencia)
+4. Transferencia confirmada (correo 2, tras verificación manual)
 
 ## 📲 Check-in con QR
 

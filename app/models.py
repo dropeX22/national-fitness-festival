@@ -8,7 +8,7 @@ Cada clase = una tabla. Cada atributo de la clase = una columna.
 import enum
 import datetime
 from sqlalchemy import (
-    Column, Integer, String, Boolean, DateTime, ForeignKey, Float, Enum, Text, UniqueConstraint
+    Column, Integer, String, Boolean, DateTime, Date, ForeignKey, Float, Enum, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -36,8 +36,33 @@ class EstadoEquipoEnum(str, enum.Enum):
 
 class EstadoPagoEnum(str, enum.Enum):
     pendiente = "Pendiente"
+    pendiente_verificacion = "Pendiente de verificación"  # transferencia esperando revisión del staff
     confirmado = "Confirmado"
     rechazado = "Rechazado"
+
+
+class TallaEnum(str, enum.Enum):
+    small = "S"
+    medium = "M"
+    large = "L"
+    xlarge = "XL"
+    xxlarge = "XXL"
+
+
+class TipoSangreEnum(str, enum.Enum):
+    a_positivo = "A+"
+    a_negativo = "A-"
+    b_positivo = "B+"
+    b_negativo = "B-"
+    ab_positivo = "AB+"
+    ab_negativo = "AB-"
+    o_positivo = "O+"
+    o_negativo = "O-"
+
+
+class MetodoPagoEnum(str, enum.Enum):
+    yappy = "Yappy"
+    transferencia = "Transferencia"
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +104,7 @@ class Equipo(Base):
 
     reglamento_aceptado = Column(Boolean, nullable=False, default=False)
     # Consentimiento para el TRATAMIENTO DE DATOS PERSONALES (Ley 81 de 2019,
-    # Panamá) — es distinto de aceptar el reglamento deportivo del evento.
+    # Panamá) — distinto de aceptar el reglamento deportivo del evento.
     consentimiento_datos_aceptado = Column(Boolean, nullable=False, default=False)
     estado = Column(Enum(EstadoEquipoEnum), nullable=False, default=EstadoEquipoEnum.pendiente, index=True)
 
@@ -113,11 +138,20 @@ class Atleta(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(150), nullable=False)
-    cedula = Column(String(30), index=True, nullable=False)  # única junto con evento_id, no sola
-    email = Column(String(150), nullable=False)
-    telefono = Column(String(30), nullable=True)
+    nombre = Column(String(100), nullable=False)
+    apellido = Column(String(100), nullable=False)
+    cedula = Column(String(30), index=True, nullable=False)  # cédula o pasaporte; única junto con evento_id
+    fecha_nacimiento = Column(Date, nullable=False)
     genero = Column(Enum(GeneroEnum), nullable=False)
+    nacionalidad = Column(String(60), nullable=False)
+    talla = Column(Enum(TallaEnum), nullable=False)
+    box = Column(String(100), nullable=True)
+    tipo_sangre = Column(Enum(TipoSangreEnum), nullable=False)
+    # Email y teléfono SOLO los llena el capitán (según el formulario nuevo);
+    # para los otros 3 integrantes quedan en NULL. Por eso son nullable=True
+    # aquí, y la obligatoriedad para el capitán se valida en schemas.py.
+    email = Column(String(150), nullable=True)
+    telefono = Column(String(30), nullable=True)
 
     equipo_id = Column(Integer, ForeignKey("equipos.id"), nullable=False)
     # Guardamos evento_id también aquí (aunque ya se puede llegar a él vía
@@ -138,9 +172,19 @@ class Pago(Base):
     id = Column(Integer, primary_key=True, index=True)
     equipo_id = Column(Integer, ForeignKey("equipos.id"), nullable=False, index=True)
     monto = Column(Float, nullable=False)
+    metodo_pago = Column(Enum(MetodoPagoEnum), nullable=False)
     estado = Column(Enum(EstadoPagoEnum), nullable=False, default=EstadoPagoEnum.pendiente, index=True)
     fecha = Column(DateTime, default=datetime.datetime.utcnow)
     referencia_yappy = Column(String(100), unique=True, nullable=True, index=True)
+    # Número de teléfono al que se le manda la solicitud de Yappy. Es un campo
+    # aparte del teléfono del capitán, porque a veces usan el Yappy de otra
+    # persona ajena al equipo. Solo aplica si metodo_pago == Yappy.
+    telefono_yappy = Column(String(30), nullable=True)
+    # Solo aplica si metodo_pago == Transferencia: plazo para que el staff
+    # verifique manualmente antes de considerarla vencida.
+    fecha_limite_verificacion = Column(DateTime, nullable=True)
+    # Nombre del miembro del staff que verificó la transferencia manualmente
+    verificado_por = Column(String(100), nullable=True)
 
     equipo = relationship("Equipo", back_populates="pagos")
 

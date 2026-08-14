@@ -60,7 +60,7 @@ def _serializar_equipo_checkin(equipo: models.Equipo) -> dict:
         "nombre": equipo.nombre,
         "categoria": equipo.categoria.value if hasattr(equipo.categoria, "value") else equipo.categoria,
         "estado": equipo.estado.value if hasattr(equipo.estado, "value") else equipo.estado,
-        "atletas": [a.nombre for a in equipo.atletas],
+        "atletas": [f"{a.nombre} {a.apellido}" for a in equipo.atletas],
         "kit_entregado": bool(equipo.checkin and equipo.checkin.kit_entregado),
     }
 

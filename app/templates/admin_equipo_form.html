@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block titulo %}{% if modo == "editar" %}Editar equipo{% else %}Nuevo equipo (manual){% endif %}{% endblock %}
+
+{% block contenido %}
+<h2 class="mb-4">
+  {% if modo == "editar" %}✏️ Editar equipo {{ equipo.codigo }}{% else %}➕ Inscripción manual (extraordinaria){% endif %}
+</h2>
+
+{% if error %}
+<div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="{% if modo == 'editar' %}/admin/equipo/{{ equipo.id }}/editar{% else %}/admin/equipo/nuevo{% endif %}">
+  <div class="card mb-4">
+    <div class="card-header fw-bold">Datos del equipo</div>
+    <div class="card-body row g-3">
+      <div class="col-md-8">
+        <label class="form-label">Nombre del equipo</label>
+        <input type="text" name="nombre_equipo" class="form-control" value="{{ nombre_equipo_valor }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Categoría</label>
+        <select name="categoria" class="form-select" required>
+          <option value="Principiante" {% if categoria_valor == "Principiante" %}selected{% endif %}>Principiante</option>
+          <option value="Avanzado" {% if categoria_valor == "Avanzado" %}selected{% endif %}>Avanzado</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATLETA 1 = CAPITÁN, fijo (igual que en el registro público) -->
+  {% set a = atletas_valores[0] %}
+  <div class="card mb-3 border-danger">
+    <div class="card-header fw-bold bg-danger text-white">👤 Capitán (Atleta 1)</div>
+    <div class="card-body row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="a1_nombre" class="form-control" value="{{ a.nombre }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Apellido</label>
+        <input type="text" name="a1_apellido" class="form-control" value="{{ a.apellido }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cédula o Pasaporte</label>
+        <input type="text" name="a1_cedula" class="form-control" value="{{ a.cedula }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Fecha de nacimiento</label>
+        <input type="date" name="a1_fecha_nacimiento" class="form-control" value="{{ a.fecha_nacimiento }}" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Género</label>
+        <select name="a1_genero" class="form-select" required>
+          <option value="M" {% if a.genero == "M" %}selected{% endif %}>Masculino</option>
+          <option value="F" {% if a.genero == "F" %}selected{% endif %}>Femenino</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Nacionalidad</label>
+        <input type="text" name="a1_nacionalidad" class="form-control" value="{{ a.nacionalidad }}" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Talla</label>
+        <select name="a1_talla" class="form-select" required>
+          {% for valor, etiqueta in [("S","Small"),("M","Medium"),("L","Large"),("XL","X Large"),("XXL","XX Large")] %}
+          <option value="{{ valor }}" {% if a.talla == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Box</label>
+        <input type="text" name="a1_box" class="form-control" value="{{ a.box }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Tipo de sangre</label>
+        <select name="a1_tipo_sangre" class="form-select" required>
+          {% for valor in ["A+","A-","B+","B-","AB+","AB-","O+","O-"] %}
+          <option value="{{ valor }}" {% if a.tipo_sangre == valor %}selected{% endif %}>{{ valor }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Email</label>
+        <input type="email" name="a1_email" class="form-control" value="{{ a.email }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Teléfono</label>
+        <input type="text" name="a1_telefono" class="form-control" value="{{ a.telefono }}" required>
+      </div>
+    </div>
+  </div>
+
+  <h4 class="mt-4 mb-3">👥 Equipo</h4>
+
+  {% for n in [2, 3, 4] %}
+  {% set a = atletas_valores[n - 1] %}
+  <div class="card mb-3">
+    <div class="card-header fw-bold">Atleta {{ n }}</div>
+    <div class="card-body row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="a{{ n }}_nombre" class="form-control" value="{{ a.nombre }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Apellido</label>
+        <input type="text" name="a{{ n }}_apellido" class="form-control" value="{{ a.apellido }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Cédula o Pasaporte</label>
+        <input type="text" name="a{{ n }}_cedula" class="form-control" value="{{ a.cedula }}" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Fecha de nacimiento</label>
+        <input type="date" name="a{{ n }}_fecha_nacimiento" class="form-control" value="{{ a.fecha_nacimiento }}" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Género</label>
+        <select name="a{{ n }}_genero" class="form-select" required>
+          <option value="M" {% if a.genero == "M" %}selected{% endif %}>Masculino</option>
+          <option value="F" {% if a.genero == "F" %}selected{% endif %}>Femenino</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Nacionalidad</label>
+        <input type="text" name="a{{ n }}_nacionalidad" class="form-control" value="{{ a.nacionalidad }}" required>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Talla</label>
+        <select name="a{{ n }}_talla" class="form-select" required>
+          {% for valor, etiqueta in [("S","Small"),("M","Medium"),("L","Large"),("XL","X Large"),("XXL","XX Large")] %}
+          <option value="{{ valor }}" {% if a.talla == valor %}selected{% endif %}>{{ etiqueta }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Box</label>
+        <input type="text" name="a{{ n }}_box" class="form-control" value="{{ a.box }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Tipo de sangre</label>
+        <select name="a{{ n }}_tipo_sangre" class="form-select" required>
+          {% for valor in ["A+","A-","B+","B-","AB+","AB-","O+","O-"] %}
+          <option value="{{ valor }}" {% if a.tipo_sangre == valor %}selected{% endif %}>{{ valor }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <button type="submit" class="btn btn-danger btn-lg">
+    {% if modo == "editar" %}Guardar cambios{% else %}Crear equipo{% endif %}
+  </button>
+  <a href="/admin" class="btn btn-outline-secondary btn-lg">Cancelar</a>
+</form>
+{% endblock %}

@@ -33,6 +33,7 @@
     <button type="submit" class="btn btn-outline-dark w-100">Filtrar</button>
   </div>
   <div class="col-md-4 text-end">
+    <a href="/admin/equipo/nuevo" class="btn btn-dark">➕ Nuevo equipo</a>
     <a href="/admin/exportar-excel" class="btn btn-success">📊 Exportar Excel</a>
   </div>
 </form>
@@ -41,11 +42,12 @@
   <thead>
     <tr>
       <th>Código</th><th>Equipo</th><th>Categoría</th><th>Estado</th>
-      <th>Capitán</th><th>Atletas</th><th>Acciones</th>
+      <th>Capitán</th><th>Atletas</th><th>Pago</th><th>Acciones</th>
     </tr>
   </thead>
   <tbody>
     {% for equipo in equipos %}
+    {% set ultimo_pago = equipo.pagos[-1] if equipo.pagos else None %}
     <tr>
       <td>{{ equipo.codigo }}</td>
       <td>{{ equipo.nombre }}</td>
@@ -55,13 +57,28 @@
         {% elif equipo.estado.value == "Cancelado" %}<span class="badge bg-secondary">Cancelado</span>
         {% else %}<span class="badge bg-warning text-dark">Pendiente</span>{% endif %}
       </td>
-      <td>{{ equipo.capitan.nombre if equipo.capitan else "-" }}</td>
+      <td>{{ equipo.capitan.nombre + " " + equipo.capitan.apellido if equipo.capitan else "-" }}</td>
       <td>{{ equipo.atletas|length }}</td>
+      <td class="small">
+        {% if ultimo_pago %}
+          {{ ultimo_pago.metodo_pago.value }}<br>
+          <span class="text-muted">{{ ultimo_pago.estado.value }}</span>
+          {% if ultimo_pago.metodo_pago.value == "Transferencia" and ultimo_pago.estado.value == "Pendiente de verificación" %}
+          <form method="post" action="/admin/pago/{{ ultimo_pago.id }}/verificar-transferencia" class="mt-1">
+            <input type="text" name="responsable" placeholder="Tu nombre" class="form-control form-control-sm mb-1" required>
+            <button type="submit" class="btn btn-outline-success btn-sm w-100">Verificar transferencia</button>
+          </form>
+          {% endif %}
+        {% else %}
+          <span class="text-muted">Sin pago</span>
+        {% endif %}
+      </td>
       <td>
-        <div class="btn-group btn-group-sm">
+        <div class="btn-group btn-group-sm mb-1">
           <button class="btn btn-outline-success" onclick="cambiarEstado({{ equipo.id }}, 'Pagado')">✔️</button>
           <button class="btn btn-outline-secondary" onclick="cambiarEstado({{ equipo.id }}, 'Cancelado')">🗑️</button>
         </div>
+        <a href="/admin/equipo/{{ equipo.id }}/editar" class="btn btn-outline-primary btn-sm w-100">✏️ Editar</a>
       </td>
     </tr>
     {% endfor %}
