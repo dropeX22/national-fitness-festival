@@ -3,7 +3,7 @@
 Sistema completo de inscripciones para el evento de CrossFit por equipos, con
 pagos (Yappy), check-in por QR y panel de administración.
 
-## 🚀 Instalación y ejecución (paso a paso)
+## Instalación y ejecución (paso a paso)
 
 ### 1. Requisitos
 - Python 3.10 o superior instalado.
@@ -33,7 +33,7 @@ python -c "from app.database import init_db; init_db()"
 ```bash
 python seed_datos_ejemplo.py
 ```
-> ⚠️ Corre este comando con el servidor **apagado** (o antes de arrancarlo).
+> Corre este comando con el servidor **apagado** (o antes de arrancarlo).
 > Si lo corres mientras `python run.py` está activo con auto-reload, puede
 > haber una condición de carrera por el archivo SQLite y los datos no
 > quedar guardados correctamente. En PostgreSQL (producción) esto no pasa,
@@ -55,7 +55,7 @@ uvicorn app.main:app --reload
 - Check-in: http://localhost:8000/checkin
 - Documentación automática de la API: http://localhost:8000/docs
 
-## 🗂️ Estructura del proyecto
+## Estructura del proyecto
 
 ```
 mi_evento/
@@ -80,7 +80,7 @@ mi_evento/
 └── README.md
 ```
 
-## ✅ Reglas de negocio implementadas
+## Reglas de negocio implementadas
 
 - Equipos de exactamente 4 personas: 2 hombres y 2 mujeres.
 - Cada atleta tiene: nombre, apellido, cédula o pasaporte, fecha de
@@ -102,7 +102,7 @@ mi_evento/
   integrantes o crear equipos manualmente (inscripciones extraordinarias).
 - Código único por equipo (`NF-001`, `NF-002`, ...).
 
-## 💳 Métodos de pago: Yappy y Transferencia
+## Métodos de pago: Yappy y Transferencia
 
 El capitán elige, desde la página de confirmación, cómo pagar:
 
@@ -131,7 +131,7 @@ El capitán elige, desde la página de confirmación, cómo pagar:
   nombre como responsable).
 - Esto marca el pago como confirmado, el equipo pasa a "Pagado", y se
   envía un **correo 2** de confirmación al capitán.
-- ⚠️ Los datos bancarios que se muestran en la página de confirmación
+- Los datos bancarios que se muestran en la página de confirmación
   (`app/templates/confirmacion.html`) son un placeholder — reemplázalos
   por los datos reales de la cuenta del evento antes de usarlo en producción.
 
@@ -139,7 +139,7 @@ El capitán elige, desde la página de confirmación, cómo pagar:
 método de pago (Yappy o transferencia), se manda un correo a
 `ADMIN_NOTIFICACION_EMAIL` (.env) avisando qué deben verificar.
 
-## 🛠️ Editar o crear equipos desde el admin
+## Editar o crear equipos desde el admin
 
 - **Editar** (`/admin/equipo/{id}/editar`): reemplaza los 4 integrantes
   de un equipo ya inscrito. Útil si cambia una persona después de
@@ -151,7 +151,7 @@ método de pago (Yappy o transferencia), se manda un correo a
   rigor que el formulario público, ya que aquí es el staff quien
   transcribe los datos.
 
-## 📧 Correos (vía Brevo)
+## Correos (vía Brevo)
 
 Usa la **API HTTP de Brevo** (antes Sendinblue) en vez de SMTP
 tradicional, porque Render bloquea los puertos SMTP en su plan gratuito.
@@ -169,7 +169,7 @@ distintos en el sistema (`app/utils.py`):
 3. Transferencia pendiente (correo 1 del flujo de transferencia)
 4. Transferencia confirmada (correo 2, tras verificación manual)
 
-## 📲 Check-in con QR
+## Check-in con QR
 
 Cada equipo recibe un QR con el contenido `EQUIPO:<id>:<codigo>`. En la
 página `/checkin`, el staff puede:
@@ -178,7 +178,7 @@ página `/checkin`, el staff puede:
   del celular funciona; no fue necesario integrar una librería de cámara
   en el navegador para mantenerlo simple).
 
-## 🌐 Despliegue gratuito (opciones fáciles)
+## Despliegue gratuito (opciones fáciles)
 
 No necesitas un servidor complejo. Estas 3 opciones tienen plan gratuito
 y son sencillas para un primer proyecto:
@@ -201,11 +201,11 @@ y son sencillas para un primer proyecto:
      configura la app WSGI apuntando a `app.main:app` (requiere adaptar
      con `a2wsgi` porque PythonAnywhere corre WSGI, no ASGI nativo).
 
-> ⚠️ Para un evento real, considera migrar de SQLite a PostgreSQL cuando
+> Para un evento real, considera migrar de SQLite a PostgreSQL cuando
 > despliegues en producción (Render y Railway ofrecen PostgreSQL gratis),
 > ya que SQLite no maneja bien muchos usuarios escribiendo al mismo tiempo.
 
-## 📅 Eventos anuales (2026, 2027, ...)
+## Eventos anuales (2026, 2027, ...)
 
 El sistema soporta que el mismo atleta compita año tras año, sin que su
 cédula quede "atrapada" en el evento anterior:
@@ -231,7 +231,7 @@ pasa a recibir las inscripciones nuevas.
 > paralelo, es un buen candidato a mejora futura — pero no bloquea el uso
 > normal de un evento a la vez.
 
-## 🐘 Migrar de SQLite a PostgreSQL (recomendado antes de inscripciones reales)
+## Migrar de SQLite a PostgreSQL (recomendado antes de inscripciones reales)
 
 El proyecto usa SQLite por defecto (archivo `evento.db`), ideal para
 desarrollo pero **no persistente en el plan gratuito de Render** (el
@@ -239,7 +239,7 @@ disco se borra en cada reinicio del contenedor). Para pasar a PostgreSQL:
 
 1. En el panel de Render, click **"New +"** → **"PostgreSQL"**.
 2. Dale un nombre (ej. `nff-db`) y elige el plan **Free** para probar
-   (⚠️ se borra automáticamente 30 días después de crearse — sube a un
+   (se borra automáticamente 30 días después de crearse — sube a un
    plan pago, desde $6/mes, antes de abrir inscripciones reales).
 3. Una vez creada, copia el valor de **"Internal Database URL"**.
 4. Ve a tu servicio web → pestaña **"Environment"** → agrega:
@@ -259,7 +259,7 @@ entregan los proveedores de base de datos.
 > datos reales que necesitas conservar, avisa antes de migrar para
 > exportarlos primero.
 
-## 🔒 Autenticación del panel admin y check-in
+## Autenticación del panel admin y check-in
 
 `/admin` y `/checkin` están protegidos con autenticación HTTP Basic: el
 navegador pedirá usuario y contraseña automáticamente la primera vez que
@@ -275,6 +275,6 @@ configuras estas variables, el sistema usa `admin` / `changeme` por
 defecto — obvio y público en el código, así que no lo dejes así en
 producción.
 
-⚠️ HTTP Basic manda las credenciales en cada petición. Es seguro solo si
+HTTP Basic manda las credenciales en cada petición. Es seguro solo si
 el sitio corre bajo HTTPS (Render y Railway lo dan gratis automáticamente
 al desplegar). Nunca lo uses sobre HTTP plano con datos reales.
